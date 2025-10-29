@@ -1,3 +1,4 @@
+import '../instrument.mjs'
 import { ENV } from './config/env.js';
 import express from 'express';
 import { connectDB } from './config/db.js';
@@ -5,16 +6,29 @@ import { clerkMiddleware } from '@clerk/express'
 import { serve } from "inngest/express";
 import { inngest, functions } from "./config/inngest.js"
 
+import * as Sentry from "@sentry/node"
+
+import chatRoutes from './routes/chat.route.js';
+
+
+
 const app = express();
 
 app.use(express.json());
 app.use(clerkMiddleware()) //add req.auth
-app.use("/api/inngest", serve({ client: inngest, functions }));
 
 app.get('/', (req, res) => {
     res.send("Hello world");
 })
 
+app.get("/debug-sentry", (req, res) => {
+    throw new Error("My first sentry error..");
+})
+
+app.use("/api/inngest", serve({ client: inngest, functions }));
+app.use("/api/chat", chatRoutes);
+
+Sentry.setupExpressErrorHandler(app);
 
 const startServer = async () => {
     try{
@@ -29,6 +43,5 @@ const startServer = async () => {
         process.exit(1);
     }
 }
-
 startServer();
 export default app;
